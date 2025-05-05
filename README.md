@@ -1,6 +1,17 @@
 # libget-non-ui-b4j
 a tool where you can use to download the missing libraries for a project
 
+## How to use
+1. Compile the project and rename the jar as libget-non-ui.jar
+2. Put the jar into B4J additional libraries folder
+3. Create a libs.json file
+4. Put the libs.json file inside the project's Objects folder
+5. In Main module, add the following comment link:
+```
+' LibDownloader: ide://run?file=%JAVABIN%\java.exe&Args=-jar&Args=%ADDITIONAL%\libget-non-ui.jar&Args=%PROJECT%\Objects
+```
+6. Mouse hover to the comment link and Ctrl+Click on it
+
 ## Sample libs.json file
 ```json
 {
