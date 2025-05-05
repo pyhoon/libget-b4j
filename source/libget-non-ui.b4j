@@ -1,0 +1,140 @@
+﻿AppType=StandardJava
+Build1=Default,com.puterise.libget.nonui
+Group=Default Group
+Library1=javaobject
+Library2=jcore
+Library3=jokhttputils2
+Library4=json
+NumberOfFiles=0
+NumberOfLibraries=4
+NumberOfModules=0
+Version=10.2
+@EndOfDesignText@
+'Non-UI application (console / server application)
+#Region Project Attributes 
+	#CommandLineArgs:
+	#MergeLibraries: True 
+#End Region
+
+Sub Process_Globals
+	Private AddLibPath As String
+	Private B4JAddLibPath As String
+	Private B4XAddLibPath As String
+	Private LibsCount As Int
+	Private Checked As Int
+End Sub
+
+Sub AppStart (Args() As String)
+	Log("libget-non-ui started...")
+	If Args.Length = 0 Then
+		Log("Project's path not provided")
+		Log("libget-non-ui ended")
+		Return
+	End If
+	CheckLibrary(Args(0))
+	StartMessageLoop
+End Sub
+
+Sub CheckLibrary (Dir As String)
+	If File.Exists(Dir, "libs.json") = False Then
+		Log("libs.json not found")
+		Return
+	End If
+	Log("libs.json found")
+	Dim SystemEnvironment As Map = getSystemEnvironment
+	Dim B4JSettingsDir As String = SystemEnvironment.Get("APPDATA") & "\Anywhere Software\B4J"
+	If File.Exists(B4JSettingsDir, "b4xV5.ini") = False Then
+		Log("B4J ini file not found")
+		Return
+	End If
+	Dim List1 As List = File.ReadList(B4JSettingsDir, "b4xV5.ini")
+	For i = 0 To List1.Size - 1
+		Dim Line As String = List1.Get(i)
+		If Line.Contains("AdditionalLibrariesFolder") Then ' File contains BOM Chr(0xFEFF)
+			AddLibPath = Line.SubString(Line.IndexOf("=")+1)
+			'Log("Additional Libraries folder: " & AddLibPath)
+			Exit
+		End If
+	Next
+	If File.Exists(File.Combine(AddLibPath, "B4J"), "") Then
+		B4JAddLibPath = File.Combine(AddLibPath, "B4J")
+	Else
+		B4JAddLibPath = AddLibPath
+	End If
+	If File.Exists(File.Combine(AddLibPath, "B4X"), "") Then
+		B4XAddLibPath = File.Combine(AddLibPath, "B4X")
+	Else
+		B4XAddLibPath = AddLibPath
+	End If
+	
+	Dim json As String = File.ReadString(Dir, "libs.json")
+	Dim libs As Map = json.As(JSON).ToMap
+	Dim Libraries As List = libs.Get("Libraries")
+	LibsCount = Libraries.Size
+	If LibsCount = 0 Then
+		Log("libget-non-ui ended")
+		Return
+	End If
+	Checked = 0
+	For Each Library As Map In Libraries
+		'Log(Library.Get("Name"))
+		'Log(Library.Get("Platform"))
+		'Log(Library.Get("Version"))
+		'Log(Library.Get("Link"))
+		Dim LibName As String = Library.Get("Name")
+		Dim Platform As String = Library.Get("Platform")
+		Dim DownloadLink As String = Library.Get("Link")
+		If Platform = "B4J" Then
+			Dim LibPath As String = B4JAddLibPath
+		Else If Platform = "B4X" Then
+			Dim LibPath As String = B4XAddLibPath
+		Else
+			Checked = Checked + 1
+			CheckAndLog
+			Return
+		End If
+		If File.Exists(LibPath, LibName) Then
+			Log($"${LibName} found"$)
+			Checked = Checked + 1
+			CheckAndLog
+		Else
+			Log($"${LibName} not found"$)
+			Download(LibName, LibPath, DownloadLink)
+		End If
+	Next
+End Sub
+
+Sub Download (FileName As String, FileDirectory As String, DownloadLink As String) As ResumableSub
+	Log($"Downloading ${FileName}..."$)
+	Dim success As Boolean
+	Dim job As HttpJob
+	job.Initialize("", Me)
+	job.Download(DownloadLink)
+	Wait For (job) JobDone(job As HttpJob)
+	If job.Success Then
+		Dim out As OutputStream = File.OpenOutput(FileDirectory, FileName, False)
+		File.Copy2(job.GetInputStream, out)
+		out.Close
+		Log($"${FileName} downloaded"$)
+		success = True
+	Else
+		Log(job.ErrorMessage)
+	End If
+	job.Release
+	Checked = Checked + 1
+	CheckAndLog
+	Return success
+End Sub
+
+Sub CheckAndLog
+	If Checked = LibsCount Then
+		Log("libget-non-ui ended")
+	End If
+End Sub
+
+Sub getSystemEnvironment As Map
+	Dim jo As JavaObject
+	jo.InitializeStatic("java.lang.System")
+	Dim Env As Map = jo.RunMethod("getenv", Null)
+	Return Env
+End Sub
