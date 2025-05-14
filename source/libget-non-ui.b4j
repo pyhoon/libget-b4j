@@ -18,6 +18,7 @@ Version=10.2
 
 Sub Process_Globals
 	Private AddLibPath As String
+	Private B4AAddLibPath As String
 	Private B4JAddLibPath As String
 	Private B4XAddLibPath As String
 	Private LibsCount As Int
@@ -25,7 +26,7 @@ Sub Process_Globals
 End Sub
 
 Sub AppStart (Args() As String)
-	Log("libget-non-ui started...")
+	Log("libget-non-ui (v1.10) started...")
 	If Args.Length = 0 Then
 		Log("Project's path not provided")
 		Log("libget-non-ui ended")
@@ -56,6 +57,11 @@ Sub CheckLibrary (Dir As String)
 			Exit
 		End If
 	Next
+	If File.Exists(File.Combine(AddLibPath, "B4A"), "") Then
+		B4AAddLibPath = File.Combine(AddLibPath, "B4A")
+	Else
+		B4AAddLibPath = AddLibPath
+	End If
 	If File.Exists(File.Combine(AddLibPath, "B4J"), "") Then
 		B4JAddLibPath = File.Combine(AddLibPath, "B4J")
 	Else
@@ -84,7 +90,9 @@ Sub CheckLibrary (Dir As String)
 		Dim LibName As String = Library.Get("Name")
 		Dim Platform As String = Library.Get("Platform")
 		Dim DownloadLink As String = Library.Get("Link")
-		If Platform = "B4J" Then
+		If Platform = "B4A" Then
+			Dim LibPath As String = B4AAddLibPath
+		Else If Platform = "B4J" Then
 			Dim LibPath As String = B4JAddLibPath
 		Else If Platform = "B4X" Then
 			Dim LibPath As String = B4XAddLibPath
