@@ -1,5 +1,5 @@
 # libget-non-ui-b4j
-a tool where you can use to download the missing libraries for a project
+a tool where you can use to download the missing libraries for B4A or B4J projects
 
 ## How to use
 1. Compile the project and rename the jar as libget-non-ui.jar
