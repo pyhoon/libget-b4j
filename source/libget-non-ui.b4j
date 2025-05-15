@@ -26,27 +26,31 @@ Sub Process_Globals
 End Sub
 
 Sub AppStart (Args() As String)
-	Log("libget-non-ui (v1.10) started...")
+	Log("libget-non-ui (v2.00) started...")
 	If Args.Length = 0 Then
 		Log("Project's path not provided")
 		Log("libget-non-ui ended")
-		Return
+		ExitApplication
 	End If
-	CheckLibrary(Args(0))
+	If Args.Length = 2 Then
+		CheckLibrary(Args(0), Args(1))
+	Else
+		CheckLibrary(Args(0), "False")
+	End If
 	StartMessageLoop
 End Sub
 
-Sub CheckLibrary (Dir As String)
+Sub CheckLibrary (Dir As String, ForceUpdate As String)
 	If File.Exists(Dir, "libs.json") = False Then
 		Log("libs.json not found")
-		Return
+		ExitApplication
 	End If
 	Log("libs.json found")
 	Dim SystemEnvironment As Map = getSystemEnvironment
 	Dim B4JSettingsDir As String = SystemEnvironment.Get("APPDATA") & "\Anywhere Software\B4J"
 	If File.Exists(B4JSettingsDir, "b4xV5.ini") = False Then
 		Log("B4J ini file not found")
-		Return
+		ExitApplication
 	End If
 	Dim List1 As List = File.ReadList(B4JSettingsDir, "b4xV5.ini")
 	For i = 0 To List1.Size - 1
@@ -79,9 +83,10 @@ Sub CheckLibrary (Dir As String)
 	LibsCount = Libraries.Size
 	If LibsCount = 0 Then
 		Log("libget-non-ui ended")
-		Return
+		ExitApplication
 	End If
 	Checked = 0
+	
 	For Each Library As Map In Libraries
 		'Log(Library.Get("Name"))
 		'Log(Library.Get("Platform"))
@@ -99,17 +104,56 @@ Sub CheckLibrary (Dir As String)
 		Else
 			Checked = Checked + 1
 			CheckAndLog
-			Return
 		End If
 		If File.Exists(LibPath, LibName) Then
 			Log($"${LibName} found"$)
-			Checked = Checked + 1
-			CheckAndLog
+			' Check version
+			If LibName.EndsWith(".b4xlib") Then
+				Log("Checking version...")
+				Dim ver As String = GetB4XLibVersion(File.Combine(LibPath, LibName))
+				Dim CurrentVersion As Double 
+				If IsNumber(ver) Then CurrentVersion = ver
+				Log($"CurrentVersion=$1.2{CurrentVersion}"$)
+				Dim RequiredVersion As Double = Library.Get("Version")
+				Log($"RequiredVersion=$1.2{RequiredVersion}"$)
+				If RequiredVersion > CurrentVersion And ForceUpdate.EqualsIgnoreCase("True") Then
+					Log("ForceUpdate=" & ForceUpdate)
+					Wait For ( Download(LibName, LibPath, DownloadLink) ) Complete (Success As Boolean)
+					Checked = Checked + 1
+					CheckAndLog
+				End If
+			Else If LibName.EndsWith(".xml") Then
+				' Read xml file
+				Checked = Checked + 1
+				CheckAndLog
+			Else
+				Checked = Checked + 1
+				CheckAndLog
+			End If
 		Else
 			Log($"${LibName} not found"$)
 			Download(LibName, LibPath, DownloadLink)
 		End If
 	Next
+End Sub
+
+' Reads the version from a .b4xlib file (B4A / B4J)
+Sub GetB4XLibVersion (LibPath As String) As String
+	Dim jZip As JavaObject
+	jZip.InitializeNewInstance("java.util.zip.ZipFile", Array(LibPath))
+	Dim ZipEntry As JavaObject = jZip.RunMethod("getEntry", Array("manifest.txt"))
+	If ZipEntry.IsInitialized Then
+		Dim jInputStream As JavaObject = jZip.RunMethod("getInputStream", Array(ZipEntry))
+		Dim b() As Byte = Bit.InputStreamToBytes(jInputStream)
+		Dim txt As String = BytesToString(b, 0, b.Length, "utf8")
+		Dim lines() As String = Regex.Split(CRLF, txt)
+		For Each line As String In lines
+			If line.StartsWith("Version=") Then
+				Return line.SubString(8) ' Extract version number
+			End If
+		Next
+	End If
+	Return "Unknown"
 End Sub
 
 Sub Download (FileName As String, FileDirectory As String, DownloadLink As String) As ResumableSub
@@ -137,6 +181,7 @@ End Sub
 Sub CheckAndLog
 	If Checked = LibsCount Then
 		Log("libget-non-ui ended")
+		ExitApplication
 	End If
 End Sub
 
