@@ -6,9 +6,10 @@ a tool where you can use to download the missing libraries for B4A or B4J projec
 2. Put the jar into B4X additional libraries folder
 3. Create a libs.json file
 4. Put the libs.json file inside your project's folder (same level as .b4a or .b4j file)
-5. In Main module (or B4XMainPage), add the following comment link to the top of the code:
+5. In Main module (or B4XMainPage), add the following comment link to the top of the code:\
+   Note: Second parameter is ForceUpdate (Boolean)
 ```
-' LibDownloader: ide://run?file=%JAVABIN%\java.exe&Args=-jar&Args=%ADDITIONAL%\..\B4X\libget-non-ui.jar&Args=%PROJECT%
+' LibDownloader: ide://run?file=%JAVABIN%\java.exe&Args=-jar&Args=%ADDITIONAL%\..\B4X\libget-non-ui.jar&Args=%PROJECT%&Args=true
 ```
 6. Mouse hover to the comment link and Ctrl+Click on it
 
