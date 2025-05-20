@@ -26,7 +26,7 @@ Sub Process_Globals
 End Sub
 
 Sub AppStart (Args() As String)
-	Log("libget-non-ui (v2.00) started...")
+	Log("libget-non-ui (v2.10) started...")
 	If Args.Length = 0 Then
 		Log("Project's path not provided")
 		Log("libget-non-ui ended")
@@ -132,7 +132,9 @@ Sub CheckLibrary (Dir As String, ForceUpdate As String)
 			End If
 		Else
 			Log($"${LibName} not found"$)
-			Download(LibName, LibPath, DownloadLink)
+			Wait For ( Download(LibName, LibPath, DownloadLink) ) Complete (Success As Boolean)
+			Checked = Checked + 1
+			CheckAndLog
 		End If
 	Next
 End Sub
@@ -173,8 +175,6 @@ Sub Download (FileName As String, FileDirectory As String, DownloadLink As Strin
 		Log(job.ErrorMessage)
 	End If
 	job.Release
-	Checked = Checked + 1
-	CheckAndLog
 	Return success
 End Sub
 
