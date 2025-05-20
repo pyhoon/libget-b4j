@@ -121,6 +121,9 @@ Sub CheckLibrary (Dir As String, ForceUpdate As String)
 					Wait For ( Download(LibName, LibPath, DownloadLink) ) Complete (Success As Boolean)
 					Checked = Checked + 1
 					CheckAndLog
+				Else
+					Checked = Checked + 1
+					CheckAndLog
 				End If
 			Else If LibName.EndsWith(".xml") Then
 				' Read xml file
