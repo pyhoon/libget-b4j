@@ -8,7 +8,7 @@ Library4=json
 NumberOfFiles=0
 NumberOfLibraries=4
 NumberOfModules=0
-Version=10.2
+Version=10.3
 @EndOfDesignText@
 'Non-UI application (console / server application)
 #Region Project Attributes 
@@ -26,7 +26,7 @@ Sub Process_Globals
 End Sub
 
 Sub AppStart (Args() As String)
-	Log("libget-non-ui (v2.30) started...")
+	Log("libget-non-ui (v2.40) started...")
 	If Args.Length = 0 Then
 		Log("Project's path not provided")
 		Log("libget-non-ui ended")
@@ -111,12 +111,12 @@ Sub CheckLibrary (Dir As String, ForceUpdate As String)
 			If LibName.EndsWith(".b4xlib") Then
 				Log("Checking version...")
 				Dim ver As String = GetB4XLibVersion(File.Combine(LibPath, LibName))
-				Dim CurrentVersion As Double 
+				Dim CurrentVersion As Double
 				If IsNumber(ver) Then CurrentVersion = ver
 				Log($"CurrentVersion=$1.2{CurrentVersion}"$)
 				Dim RequiredVersion As Double = Library.Get("Version")
 				Log($"RequiredVersion=$1.2{RequiredVersion}"$)
-				If RequiredVersion <> CurrentVersion And ForceUpdate.EqualsIgnoreCase("True") Then
+				If ForceUpdate.EqualsIgnoreCase("True") Or RequiredVersion > CurrentVersion Then
 					Log("ForceUpdate=" & ForceUpdate)
 					Wait For ( Download(LibName, LibPath, DownloadLink) ) Complete (Success As Boolean)
 					Checked = Checked + 1
