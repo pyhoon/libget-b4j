@@ -12,8 +12,13 @@ Version=10.3
 @EndOfDesignText@
 'Non-UI application (console / server application)
 #Region Project Attributes 
-	#CommandLineArgs:
-	#MergeLibraries: True 
+#CommandLineArgs:
+#MergeLibraries: True
+#Macro: Title, Objects, ide://run?file=%WINDIR%\SysWOW64\explorer.exe&Args=%PROJECT%\Objects
+#Macro: Title, Rename, ide://run?file=%WINDIR%\System32\cmd.exe&Args=/c&Args=ren&Args=result.jar&Args=libget-non-ui.jar
+#If Release
+#CustomBuildAction: 2, C:\Windows\System32\cmd.exe, /c copy result.jar %ADDITIONAL%\..\B4X\libget-non-ui.jar
+#End If
 #End Region
 
 Sub Process_Globals
@@ -26,7 +31,7 @@ Sub Process_Globals
 End Sub
 
 Sub AppStart (Args() As String)
-	Log("libget-non-ui (v2.40) started...")
+	Log("libget-non-ui (v2.50) started...")
 	If Args.Length = 0 Then
 		Log("Project's path not provided")
 		Log("libget-non-ui ended")
@@ -87,6 +92,7 @@ Sub CheckLibrary (Dir As String, ForceUpdate As String)
 	End If
 	Checked = 0
 	
+	Log("ForceUpdate=" & ForceUpdate)
 	For Each Library As Map In Libraries
 		'Log(Library.Get("Name"))
 		'Log(Library.Get("Platform"))
@@ -102,43 +108,39 @@ Sub CheckLibrary (Dir As String, ForceUpdate As String)
 		Else If Platform = "B4X" Then
 			Dim LibPath As String = B4XAddLibPath
 		Else
-			Checked = Checked + 1
 			CheckAndLog
 		End If
 		If File.Exists(LibPath, LibName) Then
 			Log($"${LibName} found"$)
 			' Check version
 			If LibName.EndsWith(".b4xlib") Then
-				Log("Checking version...")
+				'Log("Checking version...")
 				Dim ver As String = GetB4XLibVersion(File.Combine(LibPath, LibName))
 				Dim CurrentVersion As Double
 				If IsNumber(ver) Then CurrentVersion = ver
 				Log($"CurrentVersion=$1.2{CurrentVersion}"$)
 				Dim RequiredVersion As Double = Library.Get("Version")
 				Log($"RequiredVersion=$1.2{RequiredVersion}"$)
-				If ForceUpdate.EqualsIgnoreCase("True") Or RequiredVersion > CurrentVersion Then
-					Log("ForceUpdate=" & ForceUpdate)
-					Wait For ( Download(LibName, LibPath, DownloadLink) ) Complete (Success As Boolean)
-					Checked = Checked + 1
-					CheckAndLog
+				If ForceUpdate.EqualsIgnoreCase("True") Then
+					If RequiredVersion <> CurrentVersion Then
+						Wait For ( Download(LibName, LibPath, DownloadLink) ) Complete (Success As Boolean)
+					End If
 				Else
-					Checked = Checked + 1
-					CheckAndLog
+					If RequiredVersion > CurrentVersion Then
+						' Do no update if major is not same
+						If RequiredVersion.As(Int) = CurrentVersion.As(Int) Then
+							Wait For ( Download(LibName, LibPath, DownloadLink) ) Complete (Success As Boolean)
+						Else
+							Log("Lib not updated. Manually rename your current version.")
+						End If
+					End If
 				End If
-			Else If LibName.EndsWith(".xml") Then
-				' Read xml file
-				Checked = Checked + 1
-				CheckAndLog
-			Else
-				Checked = Checked + 1
-				CheckAndLog
 			End If
 		Else
 			Log($"${LibName} not found"$)
 			Wait For ( Download(LibName, LibPath, DownloadLink) ) Complete (Success As Boolean)
-			Checked = Checked + 1
-			CheckAndLog
 		End If
+		CheckAndLog
 	Next
 End Sub
 
@@ -182,6 +184,7 @@ Sub Download (FileName As String, FileDirectory As String, DownloadLink As Strin
 End Sub
 
 Sub CheckAndLog
+	Checked = Checked + 1
 	If Checked = LibsCount Then
 		Log("libget-non-ui ended")
 		ExitApplication
