@@ -17,7 +17,7 @@ Version=10.3
 #Macro: Title, Objects, ide://run?file=%WINDIR%\SysWOW64\explorer.exe&Args=%PROJECT%\Objects
 #Macro: Title, Rename, ide://run?file=%WINDIR%\System32\cmd.exe&Args=/c&Args=ren&Args=result.jar&Args=libget-non-ui.jar
 #If Release
-#CustomBuildAction: 2, C:\Windows\System32\cmd.exe, /c copy result.jar %ADDITIONAL%\..\B4X\libget-non-ui.jar
+#CustomBuildAction: 3, C:\Windows\System32\cmd.exe, /c copy result.jar %ADDITIONAL%\..\B4X\libget-non-ui.jar
 #End If
 #End Region
 
