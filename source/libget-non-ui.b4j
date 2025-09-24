@@ -15,9 +15,10 @@ Version=10.3
 #CommandLineArgs:
 #MergeLibraries: True
 #Macro: Title, Objects, ide://run?file=%WINDIR%\SysWOW64\explorer.exe&Args=%PROJECT%\Objects
-#Macro: Title, Rename, ide://run?file=%WINDIR%\System32\cmd.exe&Args=/c&Args=ren&Args=result.jar&Args=libget-non-ui.jar
+#Macro: Title, Rename, ide://run?file=%COMSPEC%&Args=/c&Args=IF+EXIST+result.jar&Args=ren&Args=result.jar&Args=libget-non-ui.jar
+'#Macro: Title, Build only, ide://run?File=%B4X%\B4JBuilder.exe&Args=-Task%3DBuild&Args=-BaseFolder%3D..&Args=-Obfuscate=False&Args=-Output%3Dlibget_non_ui
 #If Release
-#CustomBuildAction: 2, C:\Windows\System32\cmd.exe, /c copy %PROJECT%\Objects\result.jar %ADDITIONAL%\..\B4X\libget-non-ui.jar
+#CustomBuildAction: 2, %COMSPEC%, /c copy %PROJECT%\Objects\result.jar %ADDITIONAL%\..\B4X\libget-non-ui.jar
 #End If
 #End Region
 
