@@ -2,12 +2,12 @@
 A tool where you can use to download the missing libraries for B4A or B4J projects
 
 ## How to use
-1. Compile the source or download libget-non-ui.jar from releases to B$X Additional Library folder.
+1. Compile the source or download libget.jar from releases to B$X Additional Library folder.
 2. Create a libs.json file inside your project's folder (same level as .b4a or .b4j file)
 3. In Main module (or B4XMainPage), add the following #Macro tag to the top of the code:\
    Note: Second parameter is ForceUpdate (Boolean)
 ```B4X
-#Macro: Title, AddLibs, ide://run?file=%JAVABIN%\java.exe&Args=-jar&Args=%ADDITIONAL%\..\B4X\libget-non-ui.jar&Args=%PROJECT%&Args=True
+#Macro: Title, AddLibs, ide://run?file=%JAVABIN%\java.exe&Args=-jar&Args=%ADDITIONAL%\..\B4X\libget.jar&Args=%PROJECT%&Args=True
 ```
 4. Click the AddLibs Macro on the IDE title bar to execute the action.
 
