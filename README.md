@@ -1,4 +1,4 @@
-# libget-non-ui-b4j
+# libget
 A tool where you can use to download the missing libraries for B4A or B4J projects
 
 ## How to use
