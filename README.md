@@ -7,7 +7,7 @@ A tool where you can use to download the missing libraries for B4A or B4J projec
 3. In Main module (or B4XMainPage), add the following #Macro tag to the top of the code:\
    Note: Second parameter is ForceUpdate (Boolean)
 ```B4X
-#Macro: Title, AddLibs, ide://run?file=%JAVABIN%\java.exe&Args=-jar&Args=%ADDITIONAL%\..\B4X\libget.jar&Args=%PROJECT%&Args=True
+#Macro: Title, GetLibraries, ide://run?file=%JAVABIN%\java.exe&Args=-jar&Args=%ADDITIONAL%\..\B4X\libget.jar&Args=%PROJECT%&Args=True
 ```
 4. Click the AddLibs Macro on the IDE title bar to execute the action.
 
