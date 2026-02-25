@@ -1,5 +1,5 @@
 # libget
-A tool where you can use to download the missing libraries for B4A or B4J projects
+A tool for downloading the updated version or missing libraries for B4A or B4J projects.
 
 ## How to use
 1. Compile the source or download libget.jar from releases to B4X Additional Library folder.
