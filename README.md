@@ -15,7 +15,7 @@ First argument is project path containing the libs.json file \
 Second argument is option
 
 Available options:
-- AutoUpdate
+- AutoUpdate (or if second argument is not specified)
 - ForceDowngrade
 - CheckOnly 
 
