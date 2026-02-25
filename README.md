@@ -6,7 +6,7 @@ A tool where you can use to download the missing libraries for B4A or B4J projec
 2. Create a libs.json file inside your project's folder (same level as .b4a or .b4j file)
 3. In Main module (or B4XMainPage), add the following #Macro tag to the top of the code:
 ```B4X
-#Macro: Title, GetLibraries, ide://run?file=%JAVABIN%\java.exe&Args=-jar&Args=%ADDITIONAL%\..\B4X\libget.jar&Args=%PROJECT%&Args=AutoUpdate
+#Macro: Title, GetLibraries, ide://run?file=%ADDITIONAL%\..\B4X\libget.jar&Args=%PROJECT%&Args=AutoUpdate
 ```
 4. Click the GetLibraries Macro on the IDE title bar to execute the action.
 
