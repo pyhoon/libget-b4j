@@ -8,31 +8,33 @@ Library4=json
 NumberOfFiles=0
 NumberOfLibraries=4
 NumberOfModules=0
-Version=10.45
+Version=10.5
 @EndOfDesignText@
-'Non-UI application (console / server application)
-#Region Project Attributes 
+#Region Project Attributes
+' Product: Library Downloader for B4X Libraries
+' Version: 2.70
+' License: MIT License
+' Developer: Poon Yip Hoon (Aeric)
 #CommandLineArgs:
 #MergeLibraries: True
-'#Macro: Title, Objects, ide://run?file=%WINDIR%\SysWOW64\explorer.exe&Args=%PROJECT%\Objects
-'#Macro: Title, Rename, ide://run?file=%COMSPEC%&Args=/c&Args=IF+EXIST+result.jar&Args=ren&Args=result.jar&Args=libget.jar
-'#Macro: Title, Build only, ide://run?File=%B4X%\B4JBuilder.exe&Args=-Task%3DBuild&Args=-BaseFolder%3D..&Args=-Obfuscate=False&Args=-Output%3Dlibget
+#Macro: Title, Objects, ide://run?file=%WINDIR%\SysWOW64\explorer.exe&Args=%PROJECT%\Objects
+#Macro: Title, Build only, ide://run?File=%B4X%\B4JBuilder.exe&Args=-Task%3DBuild&Args=-BaseFolder%3D..&Args=-Obfuscate=False&Args=-Output%3Dlibget
 #If Release
-#CustomBuildAction: 2, %COMSPEC%, /c copy %PROJECT%\Objects\result.jar %ADDITIONAL%\..\B4X\libget.jar
+#CustomBuildAction: 2, %COMSPEC%, /c copy %PROJECT%\Objects\libget.jar %ADDITIONAL%\libget.jar
 #End If
 #End Region
 
 Sub Process_Globals
-	Private AddLibPaths As Map
 	Private LibsCount As Int
+	Private AddLibPaths As Map
 	Private CheckedCount As Int
-	Private RequiredReopen As Boolean = False
 	Private RequiredReopen As Boolean
+	Private AllowedOptions As List = Array As String("autoupdate", "forcedowngrade", "true", "false")
 	Type LibItem (Name As String, Platform As String, DownloadLink As String, UpdateLink As String, RequiredVersion As Double)	
 End Sub
 
 Sub AppStart (Args() As String)
-	Log("libget (v2.60) started...")
+	Log("libget (v2.70) started...")
 	If Args.Length = 0 Then
 		Log("Error: Project's path not provided")
 		Log("libget ended")
@@ -40,44 +42,58 @@ Sub AppStart (Args() As String)
 	End If
 	Dim ProjectDir As String = Args(0)
 	Dim UpdateOption As String = "AutoUpdate"
-	If Args.Length > 1 Then UpdateOption = Args(1)
+	If Args.Length > 1 Then
+		UpdateOption = Args(1)
+		If AllowedOptions.IndexOf(UpdateOption.ToLowerCase) < 0 Or UpdateOption.ToLowerCase.StartsWith("librariesrefresh") Then
+			UpdateOption = "CheckOnly"
+		Else
+			If UpdateOption.EqualsIgnoreCase("true") Then UpdateOption = "ForceDowngrade" ' backward compatibility
+			If UpdateOption.EqualsIgnoreCase("false") Then UpdateOption = "AutoUpdate" ' backward compatibility
+		End If
+		Log("UpdateOption=" & UpdateOption)
+	End If
+
 	InitializeEnvironment
 	RunUpdateProcess(ProjectDir, UpdateOption)
 	StartMessageLoop
 End Sub
 
 Sub InitializeEnvironment
-	AddLibPaths.Initialize
-	Dim SystemEnv As Map = getSystemEnvironment
-	Dim AppData As String = SystemEnv.GetDefault("APPDATA", "")
-	Dim B4JSettingsDir As String = File.Combine(AppData, "Anywhere Software\B4J")
+	Try
+		AddLibPaths.Initialize
+		Dim SystemEnv As Map = getSystemEnvironment
+		Dim AppData As String = SystemEnv.GetDefault("APPDATA", "")
+		Dim B4JSettingsDir As String = File.Combine(AppData, "Anywhere Software\B4J")
 	
-	If Not(File.Exists(B4JSettingsDir, "b4xV5.ini")) Then
-		Log("Error: B4J configuration not found.")
-		ExitApplication
-	End If
-
-	' Resolve the Additional Libraries root path
-	Dim RootPath As String = ""
-	Dim Settings As List = File.ReadList(B4JSettingsDir, "b4xV5.ini")
-	For Each Line As String In Settings
-		If Line.Contains("AdditionalLibrariesFolder") Then
-			RootPath = Line.SubString(Line.IndexOf("=") + 1).Trim
-			Exit
+		If Not(File.Exists(B4JSettingsDir, "b4xV5.ini")) Then
+			Log("Error: B4J configuration not found.")
+			ExitApplication
 		End If
-	Next
 
-	If RootPath = "" Then ExitApplication
+		' Resolve the Additional Libraries root path
+		Dim RootPath As String = ""
+		Dim Settings As List = File.ReadList(B4JSettingsDir, "b4xV5.ini")
+		For Each Line As String In Settings
+			If Line.Contains("AdditionalLibrariesFolder") Then
+				RootPath = Line.SubString(Line.IndexOf("=") + 1).Trim
+				Exit
+			End If
+		Next
 
-	' Map Platform-specific folders
-	For Each Platform As String In Array("B4A", "B4J", "B4X")
-		Dim SpecificPath As String = File.Combine(RootPath, Platform)
-		If File.Exists(SpecificPath, "") Then
-			AddLibPaths.Put(Platform, SpecificPath)
-		Else
-			AddLibPaths.Put(Platform, RootPath)
-		End If
-	Next
+		If RootPath = "" Then ExitApplication
+
+		' Map Platform-specific folders
+		For Each Platform As String In Array("B4A", "B4J", "B4X")
+			Dim SpecificPath As String = File.Combine(RootPath, Platform)
+			If File.Exists(SpecificPath, "") Then
+				AddLibPaths.Put(Platform, SpecificPath)
+			Else
+				AddLibPaths.Put(Platform, RootPath)
+			End If
+		Next
+	Catch
+		Log(LastException.Message)
+	End Try
 End Sub
 
 Sub RunUpdateProcess (Dir As String, Option As String)
@@ -128,12 +144,12 @@ Sub ProcessLibrary (Item As LibItem, Option As String)
 		If IsB4xLib Then
 			' Perform version checks only for b4xlibs
 			Select Option.ToLowerCase
-				Case "forcedowngrade", "true" ' backward compatibility
+				Case "forcedowngrade"
 					If Item.RequiredVersion <> CurrentVersion Then NeedsDownload = True
-				Case "autoupdate", "false" ' backward compatibility
+				Case "autoupdate"
 					' Standard Update Logic
 					If Item.UpdateLink <> "" Then
-						Wait For (GetLatestVersion(Item.UpdateLink)) Complete (VersionInfo As Map)
+						Wait For (GetLatestVersion(Item.Name, Item.UpdateLink)) Complete (VersionInfo As Map)
 						If VersionInfo.IsInitialized Then
 							Dim Newest As Double = VersionInfo.Get("Version")
 							If Newest > CurrentVersion Then
@@ -141,14 +157,12 @@ Sub ProcessLibrary (Item As LibItem, Option As String)
 								FinalDownloadLink = VersionInfo.Get("Link")
 								NeedsDownload = True
 							End If
-						Else
-							Log($"...Failed to check remote version for ${Item.Name}"$)
 						End If
 					End If
 			
 					' Fallback to required version if still older
-					If Not(NeedsDownload) And Item.RequiredVersion > CurrentVersion Then
-						Log(Item.Name)
+					If Not(Option.EqualsIgnoreCase("forcedowngrade")) And Item.RequiredVersion > CurrentVersion Then
+						'Log(Item.Name)
 						NeedsDownload = True
 					End If
 				Case Else ' "checkonly"
@@ -157,15 +171,6 @@ Sub ProcessLibrary (Item As LibItem, Option As String)
 		Else
 			' Non-b4xlib (jar/xml): Skip version comparison
 			Log($"${Item.Name} found RequiredVersion=${FormatVersion(Item.RequiredVersion)}"$)
-			'' Only download if forced by the Option argument
-			'Select Option.ToLowerCase
-			'	Case "forcedowngrade", "true"
-			'		Log($"${Item.Name} found RequiredVersion=${FormatVersion(Item.RequiredVersion)}"$)
-			'		NeedsDownload = True
-			'	Case Else
-			'		Log($"${Item.Name} found. Skipping version check."$)
-			'		NeedsDownload = False
-			'End Select
 		End If
 	End If
 
@@ -195,43 +200,48 @@ Sub GetB4XLibVersion (LibPath As String) As String
 	Return "Unknown"
 End Sub
 
-Sub GetLatestVersion (UpdateLink As String) As ResumableSub
+Sub GetLatestVersion (LibName As String, UpdateLink As String) As ResumableSub
 	Log($"Getting version info from ${UpdateLink}..."$)
-	Dim VersionInfo As Map
-	Dim job As HttpJob
-	job.Initialize("", Me)
-	job.Download(UpdateLink)
-	Wait For (job) JobDone(job As HttpJob)
-	If job.Success Then
-		Try
+	Try
+		Dim VersionInfo As Map
+		Dim job As HttpJob
+		job.Initialize("", Me)
+		job.Download(UpdateLink)
+		Wait For (job) JobDone(job As HttpJob)
+		If job.Success Then
 			'Log(job.GetString)
 			VersionInfo = job.GetString.As(JSON).ToMap
-		Catch
-			Log(LastException)
-		End Try
-	Else
-		Log(job.ErrorMessage)
-	End If
+		Else
+			Log($"...Error checking remote version for ${LibName}"$)
+			'Log(job.ErrorMessage)
+		End If
+	Catch
+		Log(LastException.Message)
+	End Try
 	job.Release
 	Return VersionInfo
 End Sub
 
 Sub Download (FileName As String, FileDirectory As String, DownloadLink As String) As ResumableSub
 	Log($"Downloading ${FileName}..."$)
-	Dim success As Boolean
-	Dim job As HttpJob
-	job.Initialize("", Me)
-	job.Download(DownloadLink)
-	Wait For (job) JobDone(job As HttpJob)
-	If job.Success Then
-		Dim out As OutputStream = File.OpenOutput(FileDirectory, FileName, False)
-		File.Copy2(job.GetInputStream, out)
-		out.Close
-		Log($"${FileName} downloaded"$)
-		success = True
-	Else
-		Log(job.ErrorMessage)
-	End If
+	Try
+		Dim success As Boolean
+		Dim job As HttpJob
+		job.Initialize("", Me)
+		job.Download(DownloadLink)
+		Wait For (job) JobDone(job As HttpJob)
+		If job.Success Then
+			Dim out As OutputStream = File.OpenOutput(FileDirectory, FileName, False)
+			File.Copy2(job.GetInputStream, out)
+			out.Close
+			Log($"${FileName} downloaded"$)
+			success = True
+		Else
+			Log(job.ErrorMessage)
+		End If
+	Catch
+		Log(LastException.Message)
+	End Try
 	job.Release
 	Return success
 End Sub
@@ -256,7 +266,7 @@ Sub OnLibraryChecked
 	End If
 End Sub
 
-Sub MapToLibItem(m As Map) As LibItem
+Sub MapToLibItem (m As Map) As LibItem
 	Dim li As LibItem
 	li.Initialize
 	li.Name = m.Get("Name")
